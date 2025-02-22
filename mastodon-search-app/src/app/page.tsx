@@ -19,17 +19,37 @@ const postsFetcher = async (query: unknown) => {
 export default function Home() {
   const [query, setQuery] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [postsQuery, setPostsQuery] = useState<{hashtag: string, instance: string}>({hashtag: "", instance: ""});
-  const [selectedInstance, setSelectedInstance] = useState("https://mastodon.social");
+  const [postsQuery, setPostsQuery] = useState<{hashtag: string, instances: string[]}>({hashtag: "", instances: []});
+  const [selectedInstances, setSelectedInstances] = useState<{[key: string]: boolean}>({
+    "https://mastodon.social": true,
+    "https://infosec.exchange": false,
+    "https://mas.to": false,
+  });
+  
   const { data, error } = useSWR<SearchResponse>(searchQuery ? searchQuery : null, fetcher);
-  const { data: postsData, error: postsError } = useSWR<SearchResponse>(postsQuery && postsQuery.hashtag && postsQuery.instance ? postsQuery : null, postsFetcher);
+  const { data: postsData, error: postsError } = useSWR<SearchResponse>(
+    postsQuery && postsQuery.hashtag && postsQuery.instances.length > 0 ? postsQuery : null, 
+    postsFetcher
+  );
 
   const handleSearch = async () => {
     setSearchQuery(query);
   };
 
+  const handleInstanceToggle = (instance: string) => {
+    setSelectedInstances(prev => ({
+      ...prev,
+      [instance]: !prev[instance]
+    }));
+  };
+
   const handlePosts = async (tag: string) => {
-    setPostsQuery({hashtag: tag, instance: selectedInstance})
+    const activeInstances = Object.entries(selectedInstances)
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      .filter(([_, isSelected]) => isSelected)
+      .map(([instance]) => instance);
+    
+    setPostsQuery({hashtag: tag, instances: activeInstances});
   };
 
   return (
@@ -53,13 +73,19 @@ export default function Home() {
           </button>
         </div>
 
-        <input
-          type="text"
-          value={selectedInstance}
-          onChange={(e) => setSelectedInstance(e.target.value)}
-          placeholder="Mastodon instance URL..."
-          className="w-full p-3 rounded-lg border"
-        />
+        <div className="flex flex-col gap-2">
+          {Object.entries(selectedInstances).map(([instance, isSelected]) => (
+            <label key={instance} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={() => handleInstanceToggle(instance)}
+                className="h-4 w-4"
+              />
+              <span>{instance}</span>
+            </label>
+          ))}
+        </div>
 
         {data?.hashtags && (
           <div className="flex flex-wrap gap-2 mt-4">

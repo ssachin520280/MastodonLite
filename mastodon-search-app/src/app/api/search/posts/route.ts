@@ -3,7 +3,7 @@ import axios from "axios";
 
 export async function POST(req: Request) {
   try {
-    const { hashtag, instance } = await req.json();
+    const { hashtag, instances } = await req.json();
     
     if (!hashtag) {
       return NextResponse.json(
@@ -12,18 +12,38 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!instance) {
+    if (!instances || !instances.length) {
       return NextResponse.json(
-        { error: "Mastodon instance URL is required" },
+        { error: "Mastodon instance URLs are required" },
         { status: 400 }
       );
     }
     
-    // Search Mastodon instance
-    const searchUrl = `${instance}/api/v1/timelines/tag/${hashtag}?limit=5`;
-    const response = await axios.get(searchUrl);
+    // Search all Mastodon instances in parallel
+    const searchPromises = instances.map(async (instance: string) => {
+      try {
+        const searchUrl = `${instance}/api/v1/timelines/tag/${hashtag}?limit=5`;
+        const response = await axios.get(searchUrl);
+        return {
+          instance,
+          posts: response.data
+        };
+      } catch (error) {
+        console.error(`Error fetching from ${instance}:`, error);
+        return {
+          instance,
+          posts: []
+        };
+      }
+    });
 
-    return NextResponse.json({ hashtag: hashtag, posts: response.data });
+    const results = await Promise.all(searchPromises);
+    const allPosts = results.flatMap(result => result.posts);
+
+    return NextResponse.json({ 
+      hashtag: hashtag, 
+      posts: allPosts,
+    });
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
       console.error("Error:", error.response?.data || error.message);
