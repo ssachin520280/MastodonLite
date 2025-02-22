@@ -3,19 +3,8 @@
 import { useState } from "react";
 import useSWR from "swr";
 import axios from "axios";
-
-interface MastodonPost {
-  content: string;
-  account: {
-    display_name: string;
-  };
-}
-
-// Add new interface for the search response
-interface SearchResponse {
-  hashtags: string[];
-  posts?: MastodonPost[];
-}
+import { PostCard } from '../components/PostCard';
+import type { SearchResponse } from '../types';
 
 const fetcher = async (query: string) => {
   const res = await axios.post("/api/search", { query });
@@ -91,11 +80,8 @@ export default function Home() {
 
       <div className="mt-6 space-y-4">
         {postsData?.posts?.length ? (
-          postsData.posts.map((post: MastodonPost, index: number) => (
-            <div key={index} className="bg-white p-4 shadow-lg rounded-lg">
-              <p className="text-gray-700">{post.content}</p>
-              <p className="text-sm text-gray-500 mt-2">By {post.account.display_name}</p>
-            </div>
+          postsData.posts.map((post, index) => (
+            <PostCard key={index} post={post} />
           ))
         ) : (
           <p className="text-gray-500 text-center mt-4">No posts found.</p>
