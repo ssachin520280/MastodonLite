@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     const searchUrl = `${instance}/api/v1/timelines/tag/${hashtag}?limit=5`;
     const response = await axios.get(searchUrl);
 
-    return NextResponse.json({ posts: response.data });
+    return NextResponse.json({ hashtag: hashtag, posts: response.data });
   } catch (error: unknown) {
     if (axios.isAxiosError(error)) {
       console.error("Error:", error.response?.data || error.message);
