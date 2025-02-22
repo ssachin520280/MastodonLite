@@ -65,7 +65,7 @@ export async function POST(req: Request) {
     if (!query)
       return NextResponse.json({ error: "Query is required" }, { status: 400 });
 
-    // Step 1: Convert query to hashtags using Gemini API
+    // Generate hashtags using Gemini API
     if (!GEMINI_API_KEY) {
       return NextResponse.json(
         { error: "GEMINI_API_KEY is not configured" },
@@ -101,8 +101,6 @@ export async function POST(req: Request) {
 
     const rawResponse = await response.json()
     const hashtags = convertTolist(rawResponse);
-
-    // Step 2: Search Mastodon posts with the generated hashtags
 
     return NextResponse.json({ rawResponse: {rawResponse}, hashtags });
   } catch (error: unknown) {
